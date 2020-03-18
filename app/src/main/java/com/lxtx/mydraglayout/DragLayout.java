@@ -4,19 +4,19 @@ import android.content.Context;
 import android.os.Build.VERSION_CODES;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Scroller;
 
+import java.util.LinkedList;
 import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.view.GestureDetectorCompat;
 import androidx.core.view.NestedScrollingParent3;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,8 +32,21 @@ import static android.view.MotionEvent.ACTION_UP;
  */
 public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
-    private final int PULL_UP_DIRECTION = 1;//上拉的方向值
-    private final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
+    private static final int PULL_UP_DIRECTION = 1;//上拉的方向值
+    private static final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
+
+    int maxScrollY = 0;//最大的滑动偏移
+    int triggerDistance = 0; //ScrollY小于该值，触发topView显示
+    private int topViewHeight;//顶部view的高度
+    private boolean attached = false; // 是否添加到窗口系统
+    private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
+
+    Scroller scroller = new Scroller(getContext());//负责view的滑动
+    private VelocityTracker velocityTracker; // 速度辅助工具
+    private ViewConfiguration viewConfiguration;//view常见参数常量类
+
+    private RecyclerView topRv;//头部RecycleView
+    private RecyclerView bottomRv;//底部RecycleView
 
     public DragLayout(Context context) {
         super(context);
@@ -56,31 +69,19 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         init(context);
     }
 
-    int lastTouchY = 0;
-    int maxScrollY = 0;
-    int triggerDistance = 0; //ScrollY小于该值，触发topView显示
-    Scroller scroller = new Scroller(getContext());
-    GestureDetectorCompat detector;
-    private VelocityTracker velocityTracker; // 速度辅助工具
-    private ViewConfiguration viewConfiguration;
-    private int topViewHeight;//顶部view的高度
-
-    private RecyclerView topRv;
-    private RecyclerView bottomRv;
-
     private void init(Context context) {
-        detector = new GestureDetectorCompat(context, new GestureDetector.SimpleOnGestureListener() {
-
-        });
         velocityTracker = VelocityTracker.obtain();
         viewConfiguration = ViewConfiguration.get(context);
-    }
-
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        topRv = (RecyclerView) getChildAt(0);
-        bottomRv = (RecyclerView) getChildAt(1);
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (null != afterLayoutRunnableList && !afterLayoutRunnableList.isEmpty()) {
+                    while (afterLayoutRunnableList.size() > 0) {
+                        afterLayoutRunnableList.removeFirst().run();
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -102,11 +103,36 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         return super.dispatchTouchEvent(ev);
     }
 
-    public void openTop() {
-
+    /**
+     * 打开topView
+     */
+    public void openTop(final boolean smooth) {
+        postAfterLayout(new Runnable() {
+            @Override
+            public void run() {
+                if (smooth) {
+                    scrollToTop();
+                } else {
+                    scrollTo(0, 0);
+                }
+            }
+        });
     }
 
-    public void openBottom() {
+    /**
+     * 打开bottomView
+     */
+    public void openBottom(final boolean smooth) {
+        postAfterLayout(new Runnable() {
+            @Override
+            public void run() {
+                if (smooth) {
+                    scrollToBottom();
+                } else {
+                    scrollTo(0, topViewHeight);
+                }
+            }
+        });
 
     }
 
@@ -280,6 +306,18 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         return ViewCompat.canScrollVertically(view, PULL_UP_DIRECTION);
     }
 
+    private void postAfterLayout(Runnable runnable) {
+        if (attached && !isLayoutRequested()) {
+            runnable.run();
+        } else {
+            if (null == afterLayoutRunnableList) {
+                afterLayoutRunnableList = new LinkedList<>();
+            }
+            afterLayoutRunnableList.addLast(runnable);
+        }
+    }
+
+
     @Override
     public void scrollTo(int x, int y) {
         //边界检测
@@ -293,8 +331,22 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        attached = true;
+    }
+
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        topRv = (RecyclerView) getChildAt(0);
+        bottomRv = (RecyclerView) getChildAt(1);
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         velocityTracker.recycle();
+        attached = false;
         super.onDetachedFromWindow();
     }
 
