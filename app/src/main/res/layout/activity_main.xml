@@ -7,24 +7,15 @@
     android:background="@android:color/holo_blue_bright"
     tools:context=".MainActivity">
 
-    <RelativeLayout
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <TextView
-            android:id="@+id/tv1"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="text1"
-            android:textSize="30sp"
-            android:textColor="@android:color/white"
-            android:background="@color/colorAccent"/>
-
-    </RelativeLayout>
+        android:layout_height="match_parent"
+        android:background="@color/colorAccent"/>
 
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv"
+        android:id="@+id/rv2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/colorPrimary"/>

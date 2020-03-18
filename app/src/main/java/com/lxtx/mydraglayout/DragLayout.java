@@ -3,6 +3,7 @@ package com.lxtx.mydraglayout;
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -20,7 +21,9 @@ import androidx.core.view.NestedScrollingParent3;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
+
+import static android.view.MotionEvent.ACTION_MOVE;
+import static android.view.MotionEvent.ACTION_UP;
 
 /**
  * todo 1 加入多点触摸 2 加入recyclerView，处理触摸拦截冲突事件
@@ -30,6 +33,8 @@ import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
  */
 public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
+    private final int PULL_UP_DIRECTION = 1;//上拉的方向值
+    private final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
 
     public DragLayout(Context context) {
         super(context);
@@ -54,12 +59,15 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
     int lastTouchY = 0;
     int maxScrollY = 0;
-    int topViewCenterScrollY = 0; //topview的中心Y坐标
+    int triggerDistance = 0; //ScrollY小于该值，触发topView显示
     Scroller scroller = new Scroller(getContext());
     GestureDetectorCompat detector;
     private VelocityTracker velocityTracker; // 速度辅助工具
     private ViewConfiguration viewConfiguration;
     private int topViewHeight;//顶部view的高度
+
+    private RecyclerView topRv;
+    private RecyclerView bottomRv;
 
     private void init(Context context) {
         detector = new GestureDetectorCompat(context, new GestureDetector.SimpleOnGestureListener() {
@@ -72,7 +80,23 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        addRecyclerViewItemTouchListener((RecyclerView) getChildAt(1));
+        topRv = (RecyclerView) getChildAt(0);
+        bottomRv = (RecyclerView) getChildAt(1);
+    }
+
+    boolean disableNestedPreScroll = false;
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if(ev.getAction() == ACTION_UP){
+            disableNestedPreScroll = true;
+            scroller.abortAnimation();
+            if(getScrollY() < triggerDistance){
+                scrollToTop();
+            }else{
+                scrollToBottom();
+            }
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -83,7 +107,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
                 lastTouchY = (int) event.getY();
             }
             return true;
-            case MotionEvent.ACTION_MOVE: {
+            case ACTION_MOVE: {
                 int dy = (int) (event.getY() - lastTouchY);
                 int tempScrollY = getScrollY() - dy;
                 if (tempScrollY >= 0 && tempScrollY <= maxScrollY) {
@@ -99,7 +123,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
                     scrollToBottom();
                 } else if (isFlingUp(velocityTracker.getYVelocity())) {
                     scrollToTop();
-                } else if (getScrollY() > topViewCenterScrollY) {
+                } else if (getScrollY() > triggerDistance) {
                     scrollToBottom();
                 } else {
                     scrollToTop();
@@ -154,11 +178,19 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     }
 
     private void scrollToTop() {
+        if(getScrollY() == 0){
+            disableNestedPreScroll = false;
+            return;
+        }
         scroller.startScroll(0, getScrollY(), 0, 0 - getScrollY());
         invalidate();
     }
 
     private void scrollToBottom() {
+        if(getScrollY() == maxScrollY){
+            disableNestedPreScroll = false;
+            return;
+        }
         scroller.startScroll(0, getScrollY(), 0, maxScrollY - getScrollY());
         invalidate();
     }
@@ -168,6 +200,8 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         if (scroller.computeScrollOffset()) {
             scrollTo(scroller.getCurrX(), scroller.getCurrY());
             invalidate();
+        }else if(disableNestedPreScroll){
+            disableNestedPreScroll = false;
         }
     }
 
@@ -191,7 +225,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         int realHeight = Math.max(totalHeight, specHeight);
         setMeasuredDimension(realWidth, realHeight);
         maxScrollY = realHeight - specHeight;
-        topViewCenterScrollY = firstChild.getMeasuredHeight() / 2;
+        triggerDistance = firstChild.getMeasuredHeight() * 3 / 4;
     }
 
     @Override
@@ -206,7 +240,6 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
-
     }
 
     @Override
@@ -220,45 +253,69 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
     @Override
     public void onStopNestedScroll(@NonNull View target, int type) {
-        if(type == ViewCompat.TYPE_TOUCH && scroller.isFinished()){
-            if (getScrollY() > topViewCenterScrollY) {
-                scrollToBottom();
-            } else {
-                scrollToTop();
+    }
+
+    @Override
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
+    }
+
+    @Override
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+        if(!scroller.isFinished()) return;
+        if (disableNestedPreScroll) {
+            consumed[1] = dy;
+            return;
+        }
+        if (target == bottomRv) {
+            boolean hiddenTop = dy > 0 && topViewIsInScreen();//topView还在屏幕内显示而且手指向上滑
+            //手指向下滑，contentView不能再下拉了(已经滑到顶部了)
+            boolean showTop = dy < 0 /*&& getScrollY() > 0*/ && !canDropDown(target);
+            if (hiddenTop || showTop) {
+                scrollBy(0, dy);
+                consumed[1] = dy;
+                Log.i("Scroll", "onNestedPreScroll if " + hiddenTop + " " + showTop);
+            }
+        } else {
+            boolean hiddenBottom = dy < 0 && contentViewIsInScreen();//手指向下滑，而且contentView还在屏幕内显示
+            boolean showBottom = dy > 0 && !canPullUp(target);//手指向上滑，而且topView已经不能再上拉了(已滑到底部)
+            if (hiddenBottom || showBottom) {
+                scrollBy(0, dy);
+                consumed[1] = dy;
+                Log.i("Scroll", "onNestedPreScroll else " + hiddenBottom + " " + showBottom);
             }
         }
     }
 
-    @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {}
-
-    @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
-        boolean hiddenTop = dy > 0 && getScrollY() < topViewHeight;
-        boolean showTop = dy < 0 && getScrollY() > 0 && !ViewCompat.canScrollVertically(target, -1);
-        if (hiddenTop || showTop) {
-            scrollBy(0, dy);
-            consumed[1] = dy;
-        }
+    /**
+     * topView是否在屏幕内显示
+     *
+     * @return
+     */
+    private boolean topViewIsInScreen() {
+        return getScrollY() < topViewHeight;
     }
 
-    @Override
-    public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
-        if (getScrollY() >= topViewHeight) {
-            return false;
-        }
-        if (!scroller.isFinished()) {
-            scroller.abortAnimation();
-        }
+    /**
+     * contentView是否在屏幕内显示
+     *
+     * @return
+     */
+    private boolean contentViewIsInScreen() {
+        return getScrollY() > 0;
+    }
 
-        if (isFlingDown(velocityY)) {
-            scrollToTop();
-            return true;
-        } else if (isFlingUp(velocityY)) {
-            scrollToBottom();
-            return true;
-        }
-        return true;
+    /**
+     * view是否能下拉
+     *
+     * @param view
+     * @return
+     */
+    private boolean canDropDown(View view) {
+        return ViewCompat.canScrollVertically(view, PULL_DOWN_DIRECTION);
+    }
+
+    private boolean canPullUp(View view) {
+        return ViewCompat.canScrollVertically(view, PULL_UP_DIRECTION);
     }
 
     @Override
@@ -273,28 +330,13 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         super.scrollTo(x, y);
     }
 
-    private void addRecyclerViewItemTouchListener(RecyclerView rv) {
-        rv.addOnItemTouchListener(new OnItemTouchListener() {
-            @Override
-            public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-                return false;
-            }
+    @Override
+    protected void onDetachedFromWindow() {
+        velocityTracker.recycle();
+        super.onDetachedFromWindow();
+    }
 
-            @Override
-            public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-                if (e.getAction() == MotionEvent.ACTION_UP) {
-                    if (getScrollY() > topViewCenterScrollY) {
-                        scrollToBottom();
-                    } else {
-                        scrollToTop();
-                    }
-                }
-            }
-
-            @Override
-            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-
-            }
-        });
+    private void log(String tag, String msg) {
+        Log.i(tag, msg);
     }
 }
