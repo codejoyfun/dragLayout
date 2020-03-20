@@ -30,7 +30,7 @@ import static android.view.MotionEvent.ACTION_UP;
  * @author 宁锟
  * @since 2020/3/15
  */
-public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
+public class DragLayout extends ViewGroup implements NestedScrollingParent3, UserAction {
 
     private static final int PULL_UP_DIRECTION = 1;//上拉的方向值
     private static final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
@@ -38,6 +38,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     int maxScrollY = 0;//最大的滑动偏移
     int triggerDistance = 0; //ScrollY小于该值，触发topView显示
     private int topViewHeight;//顶部view的高度
+    private int dampingFactor = 10;//阻尼系数
     private boolean attached = false; // 是否添加到窗口系统
     private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
     private ScrollRatioListener scrollRatioListener;
@@ -48,6 +49,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
     private RecyclerView topRv;//头部RecycleView
     private RecyclerView bottomRv;//底部RecycleView
+    private RefreshView refreshView;//下拉刷新view
 
     public DragLayout(Context context) {
         super(context);
@@ -85,6 +87,50 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         });
     }
 
+    /**
+     * 打开topView
+     */
+    @Override
+    public void openTop(final boolean smooth) {
+        postAfterLayout(new Runnable() {
+            @Override
+            public void run() {
+                if (smooth) {
+                    scrollToTop();
+                } else {
+                    scrollTo(0, 0);
+                }
+            }
+        });
+    }
+
+    /**
+     * 打开bottomView
+     */
+    @Override
+    public void openBottom(final boolean smooth) {
+        postAfterLayout(new Runnable() {
+            @Override
+            public void run() {
+                if (smooth) {
+                    scrollToBottom();
+                } else {
+                    scrollTo(0, topViewHeight);
+                }
+            }
+        });
+    }
+
+    /**
+     * 设置滑动比例监听器
+     *
+     * @param listener
+     */
+    @Override
+    public void setScrollRatioListener(ScrollRatioListener listener) {
+        scrollRatioListener = listener;
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         velocityTracker.addMovement(ev);
@@ -104,67 +150,74 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         return super.dispatchTouchEvent(ev);
     }
 
-    /**
-     * 打开topView
-     */
-    public void openTop(final boolean smooth) {
-        postAfterLayout(new Runnable() {
-            @Override
-            public void run() {
-                if (smooth) {
-                    scrollToTop();
-                } else {
-                    scrollTo(0, 0);
-                }
-            }
-        });
+    @Override
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
+        return (axes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
     }
 
-    /**
-     * 打开bottomView
-     */
-    public void openBottom(final boolean smooth) {
-        postAfterLayout(new Runnable() {
-            @Override
-            public void run() {
-                if (smooth) {
-                    scrollToBottom();
-                } else {
-                    scrollTo(0, topViewHeight);
-                }
+    @Override
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+        if (!scroller.isFinished()) {
+            return;
+        }
+        if (target == bottomRv) {
+            boolean hiddenTop = dy > 0 && topViewIsInScreen();//topView还在屏幕内显示而且手指向上滑
+            //手指向下滑，contentView不能再下拉了(已经滑到顶部了)
+            boolean showTop = dy < 0 && !canDropDown(target);
+            if (hiddenTop || showTop) {
+                scrollBy(0, dy);
+                consumed[1] = dy;
             }
-        });
+        } else {
+            boolean hiddenBottom = dy < 0 && contentViewIsInScreen();//手指向下滑，而且contentView还在屏幕内显示
+            boolean showBottom = dy > 0 && !canPullUp(target);//手指向上滑，而且topView已经不能再上拉了(已滑到底部)
+            if (hiddenBottom || showBottom) {
+                scrollBy(0, dy);
+                consumed[1] = dy;
+            }
+        }
     }
 
-    /**
-     * 设置滑动比例监听器
-     * @param listener
-     */
-    private void setScrollRatioListener(ScrollRatioListener listener){
-        scrollRatioListener = listener;
+    int refreshChildIndex = 1;
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        for (int i = 0; i < getChildCount(); i++) {
+            measureChild(getChildAt(i), widthMeasureSpec, heightMeasureSpec);
+        }
+        int totalHeight = getChildAt(0).getMeasuredHeight() + getChildAt(2).getMeasuredHeight();
+        int specHeight = MeasureSpec.getSize(heightMeasureSpec);
+        int realHeight = Math.max(totalHeight, specHeight);
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), realHeight);
+
+        topViewHeight = getChildAt(0).getMeasuredHeight();
+        maxScrollY = realHeight - specHeight;
+        triggerDistance = getChildAt(0).getMeasuredHeight() * 3 / 4;
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        int usedHeight = 0;
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (refreshChildIndex == i) {
+                child.layout(l, t, l + child.getMeasuredWidth(), t + child.getMeasuredHeight());
+            } else {
+                child.layout(l, t + usedHeight, l + child.getMeasuredWidth(), t + usedHeight + child.getMeasuredHeight());
+                usedHeight += child.getMeasuredHeight();
+            }
+        }
     }
 
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
-        if(scrollRatioListener != null) scrollRatioListener.onScroll(((float)t) / (float) getMeasuredHeight());
-        log("onScrollChanged",""+t);
-    }
-
-    private boolean canChildrenScrollVertically(MotionEvent event, int direction) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View childView = getChildAt(i);
-            if (inTouchRange(event, childView)) {
-                if (childView instanceof RecyclerView) {
-                    if (canRecyclerViewScrollVertically((RecyclerView) childView, direction)) {
-                        return true;
-                    }
-                } else if (childView.canScrollVertically(direction)) {
-                    return true;
-                }
-            }
+        float ratio = ((float) t) / maxScrollY;
+        refreshView.setProgress(ratio);
+        log("onScrollChanged", ""+ ratio);
+        if (scrollRatioListener != null) {
+            scrollRatioListener.onScroll(ratio);
         }
-        return false;
     }
 
     private boolean canRecyclerViewScrollVertically(RecyclerView recyclerView, int direction) {
@@ -179,11 +232,11 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     }
 
     private boolean isFlingDown(float velocity) {//view向下滑动
-        return velocity < 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity();
+        return velocity < 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * dampingFactor;
     }
 
     private boolean isFlingUp(float velocity) {//view向上滑动
-        return velocity > 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity();
+        return velocity > 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * dampingFactor;
     }
 
     private void scrollToTop() {
@@ -213,83 +266,6 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     @Override
     public boolean performClick() {
         return super.performClick();
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        //第一个view按照自己定义的宽高来，第二个view和父view的大小一致
-        View firstChild = getChildAt(0);
-        measureChild(firstChild, widthMeasureSpec, heightMeasureSpec);
-        View secondChild = getChildAt(1);
-        measureChild(secondChild, widthMeasureSpec, heightMeasureSpec);
-
-        int realWidth = MeasureSpec.getSize(widthMeasureSpec);
-
-        topViewHeight = firstChild.getMeasuredHeight();
-        int totalHeight = topViewHeight + secondChild.getMeasuredHeight();
-        int specHeight = MeasureSpec.getSize(heightMeasureSpec);
-        int realHeight = Math.max(totalHeight, specHeight);
-
-        setMeasuredDimension(realWidth, realHeight);
-
-        maxScrollY = realHeight - specHeight;
-        triggerDistance = firstChild.getMeasuredHeight() * 3 / 4;
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        int usedHeight = 0;
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            child.layout(l, t + usedHeight, l + child.getMeasuredWidth(), t + usedHeight + child.getMeasuredHeight());
-            usedHeight = child.getMeasuredHeight();
-        }
-    }
-
-    @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
-    }
-
-    @Override
-    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
-        return (axes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
-    }
-
-    @Override
-    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
-    }
-
-    @Override
-    public void onStopNestedScroll(@NonNull View target, int type) {
-    }
-
-    @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
-    }
-
-    @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
-        if (!scroller.isFinished()) {
-            return;
-        }
-        if (target == bottomRv) {
-            boolean hiddenTop = dy > 0 && topViewIsInScreen();//topView还在屏幕内显示而且手指向上滑
-            //手指向下滑，contentView不能再下拉了(已经滑到顶部了)
-            boolean showTop = dy < 0 /*&& getScrollY() > 0*/ && !canDropDown(target);
-            if (hiddenTop || showTop) {
-                scrollBy(0, dy);
-                consumed[1] = dy;
-                log("Scroll", "onNestedPreScroll if " + hiddenTop + " " + showTop);
-            }
-        } else {
-            boolean hiddenBottom = dy < 0 && contentViewIsInScreen();//手指向下滑，而且contentView还在屏幕内显示
-            boolean showBottom = dy > 0 && !canPullUp(target);//手指向上滑，而且topView已经不能再上拉了(已滑到底部)
-            if (hiddenBottom || showBottom) {
-                scrollBy(0, dy);
-                consumed[1] = dy;
-                log("Scroll", "onNestedPreScroll else " + hiddenBottom + " " + showBottom);
-            }
-        }
     }
 
     /**
@@ -358,7 +334,8 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     protected void onFinishInflate() {
         super.onFinishInflate();
         topRv = (RecyclerView) getChildAt(0);
-        bottomRv = (RecyclerView) getChildAt(1);
+        refreshView = (RefreshView) getChildAt(1);
+        bottomRv = (RecyclerView) getChildAt(2);
     }
 
     @Override
@@ -370,5 +347,21 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
 
     private void log(String tag, String msg) {
         Log.i(tag, msg);
+    }
+
+    @Override
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
+    }
+
+    @Override
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
+    }
+
+    @Override
+    public void onStopNestedScroll(@NonNull View target, int type) {
+    }
+
+    @Override
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
     }
 }
