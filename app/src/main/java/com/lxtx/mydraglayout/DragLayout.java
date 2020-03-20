@@ -25,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
- * todo 1 加入多点触摸 2 加入recyclerView，处理触摸拦截冲突事件
+ * todo 1 加入多点触摸 2 加入recyclerView，处理触摸拦截冲突事件 3 添加一个滑动监听器 4 给topView加一个蒙版，仿照下拉刷新的效果
  *
  * @author 宁锟
  * @since 2020/3/15
@@ -40,6 +40,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
     private int topViewHeight;//顶部view的高度
     private boolean attached = false; // 是否添加到窗口系统
     private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
+    private ScrollRatioListener scrollRatioListener;
 
     Scroller scroller = new Scroller(getContext());//负责view的滑动
     private VelocityTracker velocityTracker; // 速度辅助工具
@@ -133,7 +134,21 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
                 }
             }
         });
+    }
 
+    /**
+     * 设置滑动比例监听器
+     * @param listener
+     */
+    private void setScrollRatioListener(ScrollRatioListener listener){
+        scrollRatioListener = listener;
+    }
+
+    @Override
+    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+        super.onScrollChanged(l, t, oldl, oldt);
+        if(scrollRatioListener != null) scrollRatioListener.onScroll(((float)t) / (float) getMeasuredHeight());
+        log("onScrollChanged",""+t);
     }
 
     private boolean canChildrenScrollVertically(MotionEvent event, int direction) {
@@ -209,11 +224,14 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3 {
         measureChild(secondChild, widthMeasureSpec, heightMeasureSpec);
 
         int realWidth = MeasureSpec.getSize(widthMeasureSpec);
+
         topViewHeight = firstChild.getMeasuredHeight();
         int totalHeight = topViewHeight + secondChild.getMeasuredHeight();
         int specHeight = MeasureSpec.getSize(heightMeasureSpec);
         int realHeight = Math.max(totalHeight, specHeight);
+
         setMeasuredDimension(realWidth, realHeight);
+
         maxScrollY = realHeight - specHeight;
         triggerDistance = firstChild.getMeasuredHeight() * 3 / 4;
     }
