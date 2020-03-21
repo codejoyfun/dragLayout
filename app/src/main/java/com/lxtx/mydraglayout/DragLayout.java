@@ -37,8 +37,9 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
 
     int maxScrollY = 0;//最大的滑动偏移
     int triggerDistance = 0; //ScrollY小于该值，触发topView显示
+    float triggerRatio = 0.7f; //滑动多少比例才能拉下topView
     private int topViewHeight;//顶部view的高度
-    private int dampingFactor = 10;//阻尼系数
+    private int dampingFactor = 50;//阻尼系数
     private boolean attached = false; // 是否添加到窗口系统
     private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
     private ScrollRatioListener scrollRatioListener;
@@ -137,11 +138,11 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         if (ev.getAction() == ACTION_UP) {
             scroller.abortAnimation();
             velocityTracker.computeCurrentVelocity(1000);
-            if (isFlingDown(velocityTracker.getYVelocity()) && inTouchRange(ev, topRv) && !canRecyclerViewScrollVertically(topRv, -1)) {
+           if (isFlingDown(velocityTracker.getYVelocity()) && inTouchRange(ev, topRv) && !canRecyclerViewScrollVertically(topRv, -1)) {
                 scrollToBottom();
-            } else if (isFlingUp(velocityTracker.getYVelocity()) && inTouchRange(ev, bottomRv) && !canRecyclerViewScrollVertically(bottomRv, 1)) {
+            } /*else if (isFlingUp(velocityTracker.getYVelocity()) && inTouchRange(ev, bottomRv) && !canRecyclerViewScrollVertically(bottomRv, 1)) {
                 scrollToTop();
-            } else if (getScrollY() > triggerDistance) {
+            } */else if (getScrollY() > triggerDistance) {
                 scrollToBottom();
             } else {
                 scrollToTop();
@@ -192,7 +193,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
 
         topViewHeight = getChildAt(0).getMeasuredHeight();
         maxScrollY = realHeight - specHeight;
-        triggerDistance = getChildAt(0).getMeasuredHeight() * 3 / 4;
+        triggerDistance = (int) (getChildAt(0).getMeasuredHeight() * triggerRatio);
     }
 
     @Override

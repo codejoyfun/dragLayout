@@ -28,9 +28,9 @@ public class MainActivity extends AppCompatActivity {
         rv1.setAdapter(adapter1);
 
         RecyclerView rv2 = findViewById(R.id.rv2);
-        rv2.setLayoutManager(new LinearLayoutManager(this));
+        rv2.setLayoutManager(new SpeedLayoutManager(this).setSpeedRatio(1f));
         ArrayList<Model> data2 = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             data2.add(new Model("内容" + i));
         }
         final MyAdapter adapter2 = new MyAdapter(data2);

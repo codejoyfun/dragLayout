@@ -38,14 +38,17 @@ public class RefreshView extends View {
         init();
     }
 
-    private int MAX_RADIUS = (int) ScreenUtil.dp(getContext(), 10);
-    private int MIN_RADIUS = MAX_RADIUS / 2;
-    private int radius = 0;
+    private static final float THRESHOLD_ALPHA = 0.7f;//消隐的阈值(透明度开始变化的阈值)
+    private static final float THRESHOLD_POINT_VISIBLE = 0.95f;//圆点出现的阈值
+    private static final float THRESHOLD_POINT_GONE = 0.6f;//圆点消失的阈值
+    private final float MAX_SMALL_POINT_OFFSET = ScreenUtil.dp(getContext(), 30);//两边圆点的最大偏移值
+    private final int MAX_RADIUS = (int) ScreenUtil.dp(getContext(), 5);
+    private final int COMMON_RADIUS = (int) ScreenUtil.dp(getContext(), 3);
+    private int centerPointRadius = 0;
+    private int smallPointRadius = 0;
     private int offsetY = 0;
+    private int smallPointOffsetX = 0;//左边圆点的横坐标偏移
     private Paint paint = new Paint();
-    private float alphaThreshold = 0.7f;//消隐的阈值(透明度开始变化的阈值)
-    private float pointVisibleThreshold = 0.9f;//圆点出现的阈值
-    private float pointGoneThreshold = 0.6f;//圆点消失的阈值
 
     //进度 1到0.9 逐渐变大   从0.7开始变小，直到0.6变无
     private void init() {
@@ -59,28 +62,36 @@ public class RefreshView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawCircle(getWidth() / 2, offsetY, radius, paint);
+        canvas.drawCircle(getWidth() / 2, offsetY, centerPointRadius, paint);
+        canvas.drawCircle(getWidth() / 2 - smallPointOffsetX, offsetY, smallPointRadius, paint);
+        canvas.drawCircle(getWidth() / 2 + smallPointOffsetX, offsetY, smallPointRadius, paint);
     }
 
     public void setProgress(float progress) {
         // 进度 1到0.9 逐渐变大
-        if (progress >= pointVisibleThreshold) {
-            radius = (int) (MAX_RADIUS * (1f - (progress - pointVisibleThreshold) / (1f - pointVisibleThreshold)));
-            if (progress == pointVisibleThreshold) {//浮点数转整型有精度缺失，临界值需要保证恢复原值
-                radius = MAX_RADIUS;
+        if (progress >= THRESHOLD_POINT_VISIBLE) {
+            centerPointRadius = (int) (MAX_RADIUS * (1f - (progress - THRESHOLD_POINT_VISIBLE) / (1f - THRESHOLD_POINT_VISIBLE)));
+            if (progress == THRESHOLD_POINT_VISIBLE) {//浮点数转整型有精度缺失，临界值需要保证恢复原值
+                centerPointRadius = MAX_RADIUS;
             }
         }
         //从0.7开始变小，直到0.6变无
-        if (progress >= pointGoneThreshold && progress <= alphaThreshold) {
-            radius = MIN_RADIUS + (int) ((MAX_RADIUS - MIN_RADIUS) * (progress - pointGoneThreshold) / (alphaThreshold - pointGoneThreshold));
-            if (progress == alphaThreshold) {
-                radius = MAX_RADIUS;
-            }
+        if (progress >= THRESHOLD_POINT_GONE && progress < THRESHOLD_POINT_VISIBLE) {
+            centerPointRadius = COMMON_RADIUS + (int) ((MAX_RADIUS - COMMON_RADIUS) * (progress - THRESHOLD_POINT_GONE) / (THRESHOLD_POINT_VISIBLE - THRESHOLD_POINT_GONE));
+        }
+
+        if (progress > THRESHOLD_POINT_VISIBLE) {
+            smallPointOffsetX = 0;
+            smallPointRadius = 0;
+        } else if (progress >= THRESHOLD_POINT_GONE) {
+            //从0.9到0.6这个过程，两边圆点逐渐展开
+            smallPointOffsetX = (int) (MAX_SMALL_POINT_OFFSET * (1f - (progress - THRESHOLD_POINT_GONE) / (THRESHOLD_POINT_VISIBLE - THRESHOLD_POINT_GONE)));
+            smallPointRadius = COMMON_RADIUS;
         }
 
         offsetY = (int) ((float) getHeight() * progress + (float) getHeight() * (1f - progress) / 3f);
         postInvalidate();
-        if (progress > alphaThreshold) {
+        if (progress > THRESHOLD_ALPHA) {
             setAlpha(1);
             return;
         }
@@ -88,7 +99,7 @@ public class RefreshView extends View {
             setVisibility(View.GONE);
         } else {
             setVisibility(View.VISIBLE);
-            setAlpha(progress / alphaThreshold);
+            setAlpha(progress / THRESHOLD_ALPHA);
         }
 
 

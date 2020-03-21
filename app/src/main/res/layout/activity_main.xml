@@ -20,7 +20,7 @@
         android:background="@android:color/white"/>
 
 
-    <androidx.recyclerview.widget.RecyclerView
+    <com.lxtx.recyclerView.FlingRecyclerView
         android:id="@+id/rv2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
