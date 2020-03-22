@@ -1,4 +1,4 @@
-package com.lxtx.recyclerView;
+package com.lxtx.mydraglayout.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

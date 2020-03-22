@@ -1,4 +1,4 @@
-package com.lxtx.recyclerView;
+package com.lxtx.mydraglayout.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -6,7 +6,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.lxtx.mydraglayout.R;
-import com.lxtx.recyclerView.MyAdapter.MyHolder;
+import com.lxtx.mydraglayout.model.Model;
+import com.lxtx.mydraglayout.adapter.MyAdapter.MyHolder;
 
 import java.util.ArrayList;
 import java.util.List;

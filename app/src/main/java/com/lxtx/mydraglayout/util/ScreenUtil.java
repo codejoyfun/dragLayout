@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout;
+package com.lxtx.mydraglayout.util;
 
 import android.content.Context;
 

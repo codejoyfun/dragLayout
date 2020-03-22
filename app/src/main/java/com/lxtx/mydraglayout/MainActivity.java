@@ -2,8 +2,9 @@ package com.lxtx.mydraglayout;
 
 import android.os.Bundle;
 
-import com.lxtx.recyclerView.Model;
-import com.lxtx.recyclerView.MyAdapter;
+import com.lxtx.mydraglayout.view.DragLayout;
+import com.lxtx.mydraglayout.model.Model;
+import com.lxtx.mydraglayout.adapter.MyAdapter;
 
 import java.util.ArrayList;
 

@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout;
+package com.lxtx.mydraglayout.view;
 
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
@@ -11,6 +11,9 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Scroller;
+
+import com.lxtx.mydraglayout.ScrollRatioListener;
+import com.lxtx.mydraglayout.UserAction;
 
 import java.util.LinkedList;
 import java.util.Objects;
