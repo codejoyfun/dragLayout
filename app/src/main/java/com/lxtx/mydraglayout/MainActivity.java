@@ -2,14 +2,14 @@ package com.lxtx.mydraglayout;
 
 import android.os.Bundle;
 
-import com.lxtx.mydraglayout.view.DragLayout;
-import com.lxtx.mydraglayout.model.Model;
 import com.lxtx.mydraglayout.adapter.MyAdapter;
+import com.lxtx.mydraglayout.model.Model;
+import com.lxtx.mydraglayout.view.DragLayout;
 
 import java.util.ArrayList;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
@@ -20,9 +20,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         RecyclerView rv1 = findViewById(R.id.rv1);
-        rv1.setLayoutManager(new LinearLayoutManager(this));
+        rv1.setLayoutManager(new GridLayoutManager(this, 4));
         ArrayList<Model> data1 = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 60; i++) {
             data1.add(new Model("测试标题" + i));
         }
         final MyAdapter adapter1 = new MyAdapter(data1);

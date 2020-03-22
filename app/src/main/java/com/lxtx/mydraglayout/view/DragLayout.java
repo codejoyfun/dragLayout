@@ -43,6 +43,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
     float triggerRatio = 0.7f; //滑动多少比例才能拉下topView
     private int topViewHeight;//顶部view的高度
     private int dampingFactor = 50;//阻尼系数
+    private float topRvCameraDistance = 0;
     private boolean attached = false; // 是否添加到窗口系统
     private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
     private ScrollRatioListener scrollRatioListener;
@@ -213,12 +214,24 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         }
     }
 
+    @RequiresApi(api = VERSION_CODES.LOLLIPOP)
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
-        float ratio = ((float) t) / maxScrollY;
+        float ratio = ((float) t) / maxScrollY;//注意这个radio值是随着用户下拉越来越小的(从1到0的变化过程)
         refreshView.setProgress(ratio);
-        log("onScrollChanged", ""+ ratio);
+
+        topRv.setPivotX(topRv.getMeasuredWidth() / 2f);
+        topRv.setPivotY(0);
+        float minScale = 0.5f;
+        float scale = minScale + (1f - ratio) * (1f - minScale);
+        topRv.setScaleX(scale);
+        topRv.setScaleY(scale);
+        topRv.setTranslationY(t);
+        log("11111",""+topRv.getTranslationY());
+        //滑动的过程中会出现抖动，所以最好是能做大于某个阈值才响应滑动变化会好点
+//        topRv.setCameraDistance(10000);
+//        topRv.setCameraDistance(topRvCameraDistance + topRvCameraDistance * ratio);
         if (scrollRatioListener != null) {
             scrollRatioListener.onScroll(ratio);
         }
@@ -255,6 +268,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         if (getScrollY() == maxScrollY) {
             return;
         }
+        topRv.scrollToPosition(0);
         scroller.startScroll(0, getScrollY(), 0, maxScrollY - getScrollY());
         invalidate();
     }
@@ -340,6 +354,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         topRv = (RecyclerView) getChildAt(0);
         refreshView = (RefreshView) getChildAt(1);
         bottomRv = (RecyclerView) getChildAt(2);
+        topRvCameraDistance = topRv.getCameraDistance();
     }
 
     @Override
