@@ -1,13 +1,13 @@
 package com.lxtx.mydraglayout.util;
 
-import android.content.Context;
+import com.lxtx.mydraglayout.MyApp;
 
 /**
  * @author 宁锟
  * @since 2020/3/20
  */
 public class ScreenUtil {
-    public static float dp(Context context, int dpValue) {
-        return context.getResources().getDisplayMetrics().density * dpValue;
+    public static float dp(int dpValue) {
+        return MyApp.appContext.getResources().getDisplayMetrics().density * dpValue;
     }
 }
