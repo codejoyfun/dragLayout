@@ -16,7 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/11
  */
 public class MyAdapter extends RecyclerView.Adapter<MyHolder> {

@@ -11,7 +11,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.view.NestedScrollingParent3;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/4/4
  */
 class NestedScrollingViewGroup extends ViewGroup implements NestedScrollingParent3 {

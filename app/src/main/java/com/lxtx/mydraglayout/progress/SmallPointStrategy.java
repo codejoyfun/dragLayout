@@ -6,7 +6,7 @@ import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_GONE;
 import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_VISIBLE;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/22
  */
 public class SmallPointStrategy implements PointProgressStrategy {

@@ -1,7 +1,7 @@
 package com.lxtx.mydraglayout.model;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/11
  */
 public class Model {

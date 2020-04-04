@@ -1,7 +1,7 @@
 package com.lxtx.mydraglayout;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/20
  * 提供给用户的通用操作
  */

@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/20
  */
 public class RefreshView extends View {

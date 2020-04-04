@@ -3,7 +3,7 @@ package com.lxtx.mydraglayout.progress;
 import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_ALPHA;
 
 /**
- * @author 宁锟
+ * @author codejoyfun
  * @since 2020/3/22
  */
 public class RefreshViewAlphaStrategy implements AlphaStrategy{

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         rv1.setAdapter(adapter1);
 
         RecyclerView rv2 = findViewById(R.id.rv2);
-        rv2.setLayoutManager(new SpeedLayoutManager(this).setSpeedRatio(1f));
+        rv2.setLayoutManager(new LinearLayoutManager(this));
         ArrayList<Model> data2 = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             data2.add(new Model("内容" + i));
