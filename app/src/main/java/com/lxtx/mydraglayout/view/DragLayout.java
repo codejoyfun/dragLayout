@@ -201,7 +201,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
-        if (dyUnconsumed < 0) {//手指在bottomRv下滑，bottomRv未消费完的距离，留给父view
+        if (dyUnconsumed < 0 && type == ViewCompat.TYPE_NON_TOUCH) {//手指在bottomRv下滑，bottomRv未消费完的距离，留给父view
             scrollBy(0, dyUnconsumed);
             //后续需要判断scroller是否已经完成滚动了
             //完成滚动后，根据topRv显示在屏幕的比例去决定最终停留的页面
