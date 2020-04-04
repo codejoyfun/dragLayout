@@ -8,7 +8,6 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Scroller;
 
@@ -21,7 +20,6 @@ import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.view.NestedScrollingParent3;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,18 +30,19 @@ import static android.view.MotionEvent.ACTION_UP;
 
 /**
  * todo 1 加入多点触摸 2 加入recyclerView，处理触摸拦截冲突事件 3 添加一个滑动监听器 4 给topView加一个蒙版，仿照下拉刷新的效果
+ * todo 5 写attr文件，能在xml配置属性
  *
  * @author 宁锟
  * @since 2020/3/15
  */
-public class DragLayout extends ViewGroup implements NestedScrollingParent3, UserAction {
+public class DragLayout extends NestedScrollingViewGroup implements UserAction {
 
     private static final int PULL_UP_DIRECTION = 1;//上拉的方向值
     private static final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
 
     int maxScrollY = 0;//最大的滑动偏移
     int triggerDistance = 0; //ScrollY小于该值，触发topView显示
-    float triggerRatio = 0.9f; //滑动多少比例才能拉下topView
+    float triggerRatio = 0.8f; //滑动多少比例才能拉下topView
     private int topViewHeight;//顶部view的高度
     private int dampingFactor = 50;//阻尼系数
     private float topLeaveSpace = ScreenUtil.dp(80);//底部留出部分空间
@@ -139,40 +138,42 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         scrollRatioListener = listener;
     }
 
-    private float lastY = 0;
-    private boolean isWipeUp = false;//手指向下滑
-
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         velocityTracker.addMovement(ev);
         switch (ev.getAction()) {
             case ACTION_DOWN:
-                lastY = ev.getY();
+                scroller.abortAnimation();
+                needPostActionUp = false;
                 break;
             case ACTION_MOVE:
-                isWipeUp = ev.getY() - lastY < 0;
-                lastY = ev.getY();
                 break;
             case ACTION_UP: {
-                log("dispatchTouchEvent", isWipeUp + " " +getScrollY()+" " + (topViewHeight - triggerDistance) +" "+ triggerDistance);
-                scroller.abortAnimation();
-                velocityTracker.computeCurrentVelocity(1000);
-                if (isFlingDown(velocityTracker.getYVelocity()) && inTouchRange(ev, topRv) && !canRecyclerViewScrollVertically(topRv, -1)) {
-                    scrollToBottom();
-                } /*else if (isFlingUp(velocityTracker.getYVelocity()) && inTouchRange(ev, bottomRv) && !canRecyclerViewScrollVertically(bottomRv, 1)) {
-                scrollToTop();
-            } */ else if (getScrollY() == 0 && ev.getY() > topViewHeight) {
-                    scrollToBottom();
+                if (onActionUp(ev)) {
                     return true;
-                }else if (curLayer == LAYER_TOP && getScrollY() < triggerDistance) {
-                    scrollToBottom();
-                } else {
-                    scrollToTop();
                 }
             }
             break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    private boolean onActionUp(MotionEvent ev) {
+        scroller.abortAnimation();
+        velocityTracker.computeCurrentVelocity(1000);
+        if (isFlingDown(velocityTracker.getYVelocity()) && inTouchRange(ev, topRv) && !canRecyclerViewScrollVertically(topRv, -1)) {
+            scrollToBottom();
+        } else if (getScrollY() == 0 && ev.getY() > topViewHeight) {//点击留白处,跳到bottomView
+            scrollToBottom();
+            return true;
+        } else if (curLayer == LAYER_TOP && getScrollY() > topViewHeight - triggerDistance) {//上拉到一定距离,跳到bottomView
+            scrollToBottom();
+        } else if (getScrollY() < triggerDistance) {
+            scrollToTop();
+        } else {
+            scrollToBottom();
+        }
+        return false;
     }
 
     @Override
@@ -202,6 +203,19 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
             }
         }
     }
+
+    boolean needPostActionUp = false;
+
+    @Override
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
+        if (dyUnconsumed < 0) {//手指在contentView下滑，contentView未消费完的距离，留给父view
+            scrollBy(0, dyUnconsumed);
+            //判断scroller是否已经完成滚动了
+            //完成滚动后，执行ACTION_UP的逻辑
+            needPostActionUp = true;
+        }
+    }
+
 
     @Override
     public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
@@ -257,7 +271,7 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         topRv.setScaleX(scale);
         topRv.setScaleY(scale);
         topRv.setTranslationY(t);
-        log("11111", "" + topRv.getTranslationY());
+        log("11111", "" + oldt + " " + t);
         //滑动的过程中会出现抖动，所以最好是能做大于某个阈值才响应滑动变化会好点
 //        topRv.setCameraDistance(10000);
 //        topRv.setCameraDistance(topRvCameraDistance + topRvCameraDistance * ratio);
@@ -284,9 +298,11 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
     private boolean isFlingUp(float velocity) {//view向上滑动
         return velocity > 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * dampingFactor;
     }
+
     int curLayer = 1;
     private static final int LAYER_TOP = 0;
     private static final int LAYER_BOTTOM = 1;
+
     private void scrollToTop() {
         curLayer = LAYER_TOP;
         if (getScrollY() == 0) {
@@ -298,10 +314,10 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
 
     private void scrollToBottom() {
         curLayer = LAYER_BOTTOM;
+        topRv.scrollToPosition(0);
         if (getScrollY() == maxScrollY) {
             return;
         }
-        topRv.scrollToPosition(0);
         scroller.startScroll(0, getScrollY(), 0, maxScrollY - getScrollY());
         invalidate();
     }
@@ -311,6 +327,13 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
         if (scroller.computeScrollOffset()) {
             scrollTo(scroller.getCurrX(), scroller.getCurrY());
             invalidate();
+        } else if (needPostActionUp) {
+            needPostActionUp = false;
+            if (getScrollY() < triggerDistance) {
+                scrollToTop();
+            } else {
+                scrollToBottom();
+            }
         }
     }
 
@@ -398,21 +421,5 @@ public class DragLayout extends ViewGroup implements NestedScrollingParent3, Use
 
     private void log(String tag, String msg) {
         Log.i(tag, msg);
-    }
-
-    @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
-    }
-
-    @Override
-    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
-    }
-
-    @Override
-    public void onStopNestedScroll(@NonNull View target, int type) {
-    }
-
-    @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
     }
 }
