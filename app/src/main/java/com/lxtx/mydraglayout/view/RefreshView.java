@@ -46,7 +46,7 @@ public class RefreshView extends View {
     public static final float THRESHOLD_ALPHA = 0.7f;//消隐的阈值(透明度开始变化的阈值)
     public static final float THRESHOLD_POINT_VISIBLE = 0.95f;//圆点出现的阈值
     public static final float THRESHOLD_POINT_GONE = 0.6f;//圆点消失的阈值
-    public static final float MAX_SMALL_POINT_OFFSET = ScreenUtil.dp(30);//两边圆点的最大偏移值
+    public static final int MAX_SMALL_POINT_OFFSET = (int) ScreenUtil.dp(30);//两边圆点的最大偏移值
     public static final int MAX_RADIUS = (int) ScreenUtil.dp(5);
     public static final int COMMON_RADIUS = (int) ScreenUtil.dp(3);
     private int offsetY = 0;

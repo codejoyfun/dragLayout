@@ -264,7 +264,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         //这里实现的逻辑是 1.计算出滑动比例，传递给蒙版进行刷新 2.根据滑动比例，缩放topRv 3.通知监听滑动比例的回调
         super.onScrollChanged(l, t, oldl, oldt);
-        float ratio = ((float) t) / maxScrollY;//注意这个radio值是随着用户下拉越来越小的(从1到0的变化过程)
+        float ratio = ((float) t) / (float)maxScrollY;//注意这个radio值是随着用户下拉越来越小的(从1到0的变化过程)
         refreshView.setProgress(ratio);
 
         topRv.setPivotX(topRv.getMeasuredWidth() / 2f);
