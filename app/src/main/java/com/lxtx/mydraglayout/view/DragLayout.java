@@ -37,14 +37,16 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
 
     private static final int PULL_UP_DIRECTION = 1;//上拉的方向值
     private static final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
+    private static final float TRIGGER_RATIO = 0.8f; //滑动多少比例才能拉下topView
+    private static final int INERTIA_FACTOR = 2;//惯性滑动系数(用于放缩“DragLayout消费bottomRv在下拉时未消费完的距离”)
+    private static final int DAMPING_FACTOR = 50;//阻尼系数(用于放缩是否可以判定为fling要达到的最小速度)
 
     int maxScrollY = 0;//最大的滑动偏移
     int triggerDistance = 0; //ScrollY小于该值，触发topView显示
-    float triggerRatio = 0.8f; //滑动多少比例才能拉下topView
     private int topViewHeight;//顶部view的高度
-    private int dampingFactor = 50;//阻尼系数
     private float topLeaveSpace = ScreenUtil.dp(80);//底部留出部分空间
     private boolean attached = false; // 是否添加到窗口系统
+
     private LinkedList<Runnable> afterLayoutRunnableList;//布局完成后要执行的任务
     private ScrollRatioListener scrollRatioListener;
 
@@ -147,6 +149,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
             case ACTION_MOVE:
                 break;
             case ACTION_UP: {
+                if(needReset) break;
                 scroller.abortAnimation();
                 velocityTracker.computeCurrentVelocity(1000);
                 //手指向上fling && 触摸点在topRv里 && topRv已经滑到底部不能再上拉
@@ -202,7 +205,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
         if (dyUnconsumed < 0 && type == ViewCompat.TYPE_NON_TOUCH) {//手指在bottomRv下滑，bottomRv未消费完的距离，留给父view
-            scrollBy(0, dyUnconsumed);
+            scrollBy(0, dyUnconsumed * INERTIA_FACTOR);
             //后续需要判断scroller是否已经完成滚动了
             //完成滚动后，根据topRv显示在屏幕的比例去决定最终停留的页面
             needReset = true;
@@ -241,7 +244,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
         //记录垂直方向最大的滑动偏移
         maxScrollY = realHeight - specHeight;
         //记录触发跳转到topRv滑动偏移阈值
-        triggerDistance = (int) (getChildAt(topChildIndex).getMeasuredHeight() * triggerRatio);
+        triggerDistance = (int) (getChildAt(topChildIndex).getMeasuredHeight() * TRIGGER_RATIO);
     }
 ////////////////////////////////////////布局逻辑///////////////////////////////////////////////////////////////
     @Override
@@ -295,7 +298,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
      * @return
      */
     private boolean isFlingUp(float velocity) {
-        return velocity < 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * dampingFactor;
+        return velocity < 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * DAMPING_FACTOR;
     }
     /**
      * 根据速度大小判断手指是否向下fling
@@ -303,7 +306,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
      * @return
      */
     private boolean isFlingDown(float velocity) {
-        return velocity > 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * dampingFactor;
+        return velocity > 0 && Math.abs(velocity) > viewConfiguration.getScaledMinimumFlingVelocity() * DAMPING_FACTOR;
     }
 
     //记录当前显示的层次
