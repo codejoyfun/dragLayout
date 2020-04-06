@@ -2,7 +2,7 @@ package com.lxtx.mydraglayout.progress;
 
 import static com.lxtx.mydraglayout.view.RefreshView.COMMON_RADIUS;
 import static com.lxtx.mydraglayout.view.RefreshView.MAX_RADIUS;
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_GONE;
+import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_BECOME_SMALLER;
 import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_VISIBLE;
 
 /**
@@ -16,8 +16,8 @@ public class CenterPointStrategy implements PointProgressStrategy {
         // 进度 1到0.95 逐渐变大
         if (progress >= THRESHOLD_POINT_VISIBLE) {
             radius = (int) (MAX_RADIUS * (1f - (progress - THRESHOLD_POINT_VISIBLE) / (1f - THRESHOLD_POINT_VISIBLE)));
-        }else if (progress >= THRESHOLD_POINT_GONE) {//从0.95开始变小，直到0.6变无
-            radius = COMMON_RADIUS + (int) ((MAX_RADIUS - COMMON_RADIUS) * (progress - THRESHOLD_POINT_GONE) / (THRESHOLD_POINT_VISIBLE - THRESHOLD_POINT_GONE));
+        }else if (progress >= THRESHOLD_POINT_BECOME_SMALLER) {//从0.95开始变小，直到0.6变无
+            radius = COMMON_RADIUS + (int) ((MAX_RADIUS - COMMON_RADIUS) * (progress - THRESHOLD_POINT_BECOME_SMALLER) / (THRESHOLD_POINT_VISIBLE - THRESHOLD_POINT_BECOME_SMALLER));
         }
     }
 

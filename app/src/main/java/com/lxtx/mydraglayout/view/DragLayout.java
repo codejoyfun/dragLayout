@@ -36,7 +36,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
 
     private static final int PULL_UP_DIRECTION = 1;//上拉的方向值
     private static final int PULL_DOWN_DIRECTION = -1;//下拉的方向值
-    private static final float TRIGGER_RATIO = 0.8f; //滑动多少比例才能拉下topView
+    private static final float TRIGGER_RATIO = 0.7f; //滑动多少比例才能拉下topView
     private static final int INERTIA_FACTOR = 2;//惯性滑动系数(用于放缩“DragLayout消费bottomRv在下拉时未消费完的距离”)
     private static final int DAMPING_FACTOR = 50;//阻尼系数(用于放缩是否可以判定为fling要达到的最小速度)
 

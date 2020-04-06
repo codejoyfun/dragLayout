@@ -8,7 +8,10 @@ import android.os.Build.VERSION_CODES;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.lxtx.mydraglayout.progress.AlphaStrategy;
 import com.lxtx.mydraglayout.progress.CenterPointStrategy;
+import com.lxtx.mydraglayout.progress.PointAlphaStrategy;
+import com.lxtx.mydraglayout.progress.PointProgressStrategy;
 import com.lxtx.mydraglayout.progress.RefreshViewAlphaStrategy;
 import com.lxtx.mydraglayout.progress.SmallPointStrategy;
 import com.lxtx.mydraglayout.util.ScreenUtil;
@@ -45,15 +48,17 @@ public class RefreshView extends View {
 
     public static final float THRESHOLD_ALPHA = 0.7f;//消隐的阈值(透明度开始变化的阈值)
     public static final float THRESHOLD_POINT_VISIBLE = 0.95f;//圆点出现的阈值
-    public static final float THRESHOLD_POINT_GONE = 0.6f;//圆点消失的阈值
+    public static final float THRESHOLD_POINT_BECOME_SMALLER = 0.6f;//圆点半径开始变小的阈值
+    public static final float THRESHOLD_POINT_FADE = 0.4f;//圆点半径淡入淡出的阈值
     public static final int MAX_SMALL_POINT_OFFSET = (int) ScreenUtil.dp(30);//两边圆点的最大偏移值
     public static final int MAX_RADIUS = (int) ScreenUtil.dp(5);
     public static final int COMMON_RADIUS = (int) ScreenUtil.dp(3);
     private int offsetY = 0;
     private Paint pointPaint = new Paint();
-    private SmallPointStrategy smallPointStrategy = new SmallPointStrategy();
-    private CenterPointStrategy centerPointStrategy = new CenterPointStrategy();
-    private RefreshViewAlphaStrategy alphaStrategy = new RefreshViewAlphaStrategy();
+    private PointProgressStrategy smallPointStrategy = new SmallPointStrategy();
+    private PointProgressStrategy centerPointStrategy = new CenterPointStrategy();
+    private AlphaStrategy backgroundAlphaStrategy = new RefreshViewAlphaStrategy();
+    private AlphaStrategy pointAlphaStrategy = new PointAlphaStrategy();
 
     //进度 1到0.9 逐渐变大   从0.7开始变小，直到0.6变无
     private void init() {
@@ -78,10 +83,12 @@ public class RefreshView extends View {
     public void setProgress(float progress) {
         centerPointStrategy.onProgressChange(progress);
         smallPointStrategy.onProgressChange(progress);
-        alphaStrategy.onProgressChange(progress);
+        backgroundAlphaStrategy.onProgressChange(progress);
+        pointAlphaStrategy.onProgressChange(progress);
 
-        setAlpha(alphaStrategy.getAlpha());
-        setVisibility(alphaStrategy.shouldVisible() ? View.VISIBLE : View.GONE);
+        setAlpha(backgroundAlphaStrategy.getAlpha());
+        setVisibility(backgroundAlphaStrategy.getAlpha() > 0 ? View.VISIBLE : View.GONE);
+        pointPaint.setAlpha((int) (pointAlphaStrategy.getAlpha() * 255f));
 
         offsetY = (int) ((float) getHeight() * progress + (float) getHeight() * (1f - progress) / 3f);
         postInvalidate();

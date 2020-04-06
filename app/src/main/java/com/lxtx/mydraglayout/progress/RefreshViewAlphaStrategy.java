@@ -6,7 +6,7 @@ import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_ALPHA;
  * @author codejoyfun
  * @since 2020/3/22
  */
-public class RefreshViewAlphaStrategy implements AlphaStrategy{
+public class RefreshViewAlphaStrategy implements AlphaStrategy {
     private float alpha = 0f;
 
     @Override
@@ -21,9 +21,5 @@ public class RefreshViewAlphaStrategy implements AlphaStrategy{
         } else {
             alpha = progress / THRESHOLD_ALPHA;
         }
-    }
-
-    public boolean shouldVisible(){
-        return alpha > 0;
     }
 }
