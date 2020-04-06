@@ -27,8 +27,7 @@ import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
- * todo 1 加入多点触摸 2 加入recyclerView，处理触摸拦截冲突事件 3 添加一个滑动监听器 4 给topView加一个蒙版，仿照下拉刷新的效果
- * todo 5 写attr文件，能在xml配置属性
+ * todo 1 写attr文件，能在xml配置属性 2 topRv上拉回弹效果 3 bottomRv的背景随着下拉距离淡入淡出
  *
  * @author codejoyfun
  * @since 2020/3/15
