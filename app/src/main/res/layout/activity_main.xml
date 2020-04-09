@@ -7,12 +7,18 @@
     android:background="@color/colorAccent"
     tools:context=".MainActivity">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv1"
+    <com.lxtx.mydraglayout.view.ReboundLayout
+        android:id="@+id/layout_rebound"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorAccent"/>
+        android:layout_height="wrap_content">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"/>
+
+    </com.lxtx.mydraglayout.view.ReboundLayout>
 
     <com.lxtx.mydraglayout.view.RefreshView
         android:layout_width="match_parent"

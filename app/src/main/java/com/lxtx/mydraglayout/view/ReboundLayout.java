@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Scroller;
 
 import com.lxtx.mydraglayout.OnReboundListener;
+import com.lxtx.mydraglayout.util.ScreenUtil;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -39,8 +40,10 @@ public class ReboundLayout extends NestedScrollingViewGroup {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    Scroller scroller = new Scroller(getContext());//负责view的滑动
-    OnReboundListener onReboundListener;
+    private static final int REBOUND_SLOP = (int) ScreenUtil.dp(200);//边界超出该距离，执行回弹监听器的逻辑
+    private Scroller scroller = new Scroller(getContext());//负责view的滑动
+    private OnReboundListener onReboundListener;
+    private int consumeFactor = 2;
 
     public void setOnReboundListener(OnReboundListener listener){
         onReboundListener = listener;
@@ -53,8 +56,9 @@ public class ReboundLayout extends NestedScrollingViewGroup {
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if (ev.getAction() == ACTION_UP && getScrollY() > 0) {
+            if(onReboundListener != null && getScrollY() > REBOUND_SLOP) onReboundListener.onRebound();
             scroller.startScroll(getScrollX(), getScrollY(), 0, -getScrollY(), 500);
-            onReboundListener.onRebound();
+            invalidate();
         }
         return super.dispatchTouchEvent(ev);
     }
@@ -67,7 +71,7 @@ public class ReboundLayout extends NestedScrollingViewGroup {
     @Override
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         if (getScrollY() > 0) {
-            scrollBy(0, dy);
+            scrollBy(0, dy / consumeFactor);
             consumed[1] = dy;
         }
     }

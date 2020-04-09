@@ -11,6 +11,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.widget.Scroller;
 
+import com.lxtx.mydraglayout.OnReboundListener;
 import com.lxtx.mydraglayout.ScrollRatioListener;
 import com.lxtx.mydraglayout.UserAction;
 import com.lxtx.mydraglayout.util.ScreenUtil;
@@ -53,6 +54,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
     private VelocityTracker velocityTracker; // 速度辅助工具
     private ViewConfiguration viewConfiguration;//view常见参数常量类
 
+    private ReboundLayout topView;//头部回弹View
     private RecyclerView topRv;//头部RecycleView
     private RecyclerView bottomRv;//底部RecycleView
     private RefreshView refreshView;//下拉刷新view
@@ -151,10 +153,7 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
                 if(needReset) break;
                 scroller.abortAnimation();
                 velocityTracker.computeCurrentVelocity(1000);
-                //手指向上fling && 触摸点在topRv里 && topRv已经滑到底部不能再上拉
-                if (isFlingUp(velocityTracker.getYVelocity()) && inTouchRange(ev, topRv) && !canPullUp(topRv)) {
-                    scrollToBottom();
-                } else if (getScrollY() == 0 && ev.getY() > topViewHeight) {//点击留白处,跳到bottomView(topView处于完全显示状态,但手指抬起点在topView之外)
+               if (getScrollY() == 0 && ev.getY() > topViewHeight) {//点击留白处,跳到bottomView(topView处于完全显示状态,但手指抬起点在topView之外)
                     scrollToBottom();
                     return true;
                 } else if (curLayer == LAYER_TOP && getScrollY() > topViewHeight - triggerDistance) {//当前显层是topView,上拉到一定距离,跳到bottomView
@@ -188,13 +187,6 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
                 scrollBy(0, dy);
                 consumed[1] = dy;
             }
-        } else {
-            boolean hideBottom = dy < 0 && contentViewIsInScreen();//手指向下滑，而且contentView还在屏幕内显示
-            boolean showBottom = dy > 0 && !canPullUp(target);//手指向上滑，而且topView已经不能再上拉了(已滑到底部)
-            if (hideBottom || showBottom) {
-                scrollBy(0, dy);
-                consumed[1] = dy;
-            }
         }
     }
 
@@ -214,14 +206,14 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
 
     @Override
     public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
-        if (target == bottomRv && topViewIsInScreen()) {//触摸的目标view是bottomRv && topRv有显示在屏幕上，DragLayout接管fling事件
+        if (target == bottomRv && topViewIsInScreen()) {//触摸的目标view是bottomRv && reboundLayout有显示在屏幕上，DragLayout接管fling事件
             return true;
         }
         return super.onNestedPreFling(target, velocityX, velocityY);
     }
 
     ///////////////////////////////////////测量逻辑///////////////////////////////////////////////////////////////
-    int topChildIndex = 0;//topRv对应的下标
+    int topChildIndex = 0;//reboundLayout对应的下标
     int refreshChildIndex = 1;//刷新蒙版对应的下标
     int bottomChildIndex = 2;//bottomRv对应的下标
 
@@ -242,13 +234,13 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
         topViewHeight = getChildAt(topChildIndex).getMeasuredHeight();
         //记录垂直方向最大的滑动偏移
         maxScrollY = realHeight - specHeight;
-        //记录触发跳转到topRv滑动偏移阈值
+        //记录触发跳转到reboundLayout滑动偏移阈值
         triggerDistance = (int) (getChildAt(topChildIndex).getMeasuredHeight() * TRIGGER_RATIO);
     }
 ////////////////////////////////////////布局逻辑///////////////////////////////////////////////////////////////
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        //topRv和刷新蒙版放在同样的位置，而且蒙版盖在topRv的上面，而bottomRv放在topRv的下方
+        //reboundLayout和刷新蒙版放在同样的位置，而且蒙版盖在reboundLayout的上面，而bottomRv放在topRv的下方
         int usedHeight = 0;
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
@@ -264,18 +256,18 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
     @RequiresApi(api = VERSION_CODES.LOLLIPOP)
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-        //这里实现的逻辑是 1.计算出滑动比例，传递给蒙版进行刷新 2.根据滑动比例，缩放topRv 3.通知监听滑动比例的回调
+        //这里实现的逻辑是 1.计算出滑动比例，传递给蒙版进行刷新 2.根据滑动比例，topView 3.通知监听滑动比例的回调
         super.onScrollChanged(l, t, oldl, oldt);
         float ratio = ((float) t) / (float)maxScrollY;//注意这个radio值是随着用户下拉越来越小的(从1到0的变化过程)
         refreshView.setProgress(ratio);
 
-        topRv.setPivotX(topRv.getMeasuredWidth() / 2f);
-        topRv.setPivotY(0);
+        topView.setPivotX(topView.getMeasuredWidth() / 2f);
+        topView.setPivotY(0);
         float minScale = 0.5f;
         float scale = minScale + (1f - ratio) * (1f - minScale);
-        topRv.setScaleX(scale);
-        topRv.setScaleY(scale);
-        topRv.setTranslationY(t);
+        topView.setScaleX(scale);
+        topView.setScaleY(scale);
+        topView.setTranslationY(t);
         if (scrollRatioListener != null) {
             scrollRatioListener.onScroll(ratio);
         }
@@ -424,9 +416,17 @@ public class DragLayout extends NestedScrollingViewGroup implements UserAction {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        topRv = (RecyclerView) getChildAt(topChildIndex);
+        topView = (ReboundLayout) getChildAt(topChildIndex);
+        topRv = topView.getContentView();
         refreshView = (RefreshView) getChildAt(refreshChildIndex);
         bottomRv = (RecyclerView) getChildAt(bottomChildIndex);
+
+        topView.setOnReboundListener(new OnReboundListener() {
+            @Override
+            public void onRebound() {
+                scrollToBottom();
+            }
+        });
     }
 
     @Override
