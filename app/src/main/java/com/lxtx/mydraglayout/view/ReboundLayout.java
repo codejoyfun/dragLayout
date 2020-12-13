@@ -41,9 +41,9 @@ public class ReboundLayout extends NestedScrollingViewGroup {
     }
 
     private static final int REBOUND_SLOP = (int) ScreenUtil.dp(200);//边界超出该距离，执行回弹监听器的逻辑
+    private static final int CONSUME_FACTOR = 2;//overScroll消耗的距离比例
     private Scroller scroller = new Scroller(getContext());//负责view的滑动
     private OnReboundListener onReboundListener;
-    private int consumeFactor = 2;
 
     public void setOnReboundListener(OnReboundListener listener){
         onReboundListener = listener;
@@ -71,7 +71,7 @@ public class ReboundLayout extends NestedScrollingViewGroup {
     @Override
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         if (getScrollY() > 0) {
-            scrollBy(0, dy / consumeFactor);
+            scrollBy(0, dy / CONSUME_FACTOR);
             consumed[1] = dy;
         }
     }
