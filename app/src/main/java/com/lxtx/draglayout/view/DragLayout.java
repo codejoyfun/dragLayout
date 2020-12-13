@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.view;
+package com.lxtx.draglayout.view;
 
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
@@ -11,10 +11,10 @@ import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.widget.Scroller;
 
-import com.lxtx.mydraglayout.OnReboundListener;
-import com.lxtx.mydraglayout.ScrollRatioListener;
-import com.lxtx.mydraglayout.UserAction;
-import com.lxtx.mydraglayout.util.ScreenUtil;
+import com.lxtx.draglayout.OnReboundListener;
+import com.lxtx.draglayout.ScrollRatioListener;
+import com.lxtx.draglayout.UserAction;
+import com.lxtx.draglayout.util.ScreenUtil;
 
 import java.util.LinkedList;
 

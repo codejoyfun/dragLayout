@@ -1,6 +1,6 @@
-package com.lxtx.mydraglayout.progress;
+package com.lxtx.draglayout.progress;
 
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_ALPHA;
+import static com.lxtx.draglayout.view.RefreshView.THRESHOLD_ALPHA;
 
 /**
  * @author codejoyfun

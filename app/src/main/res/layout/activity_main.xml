@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.lxtx.mydraglayout.view.DragLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lxtx.draglayout.view.DragLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/drag_layout"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,7 +7,7 @@
     android:background="@color/colorAccent"
     tools:context=".MainActivity">
 
-    <com.lxtx.mydraglayout.view.ReboundLayout
+    <com.lxtx.draglayout.view.ReboundLayout
         android:id="@+id/layout_rebound"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -18,9 +18,9 @@
             android:layout_height="wrap_content"
             android:background="@color/colorAccent"/>
 
-    </com.lxtx.mydraglayout.view.ReboundLayout>
+    </com.lxtx.draglayout.view.ReboundLayout>
 
-    <com.lxtx.mydraglayout.view.RefreshView
+    <com.lxtx.draglayout.view.RefreshView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/white"/>
@@ -32,4 +32,4 @@
         android:layout_height="match_parent"
         android:background="@color/colorPrimary"/>
 
-</com.lxtx.mydraglayout.view.DragLayout>
+</com.lxtx.draglayout.view.DragLayout>

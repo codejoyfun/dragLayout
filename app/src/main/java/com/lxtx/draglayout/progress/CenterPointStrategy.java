@@ -1,9 +1,9 @@
-package com.lxtx.mydraglayout.progress;
+package com.lxtx.draglayout.progress;
 
-import static com.lxtx.mydraglayout.view.RefreshView.COMMON_RADIUS;
-import static com.lxtx.mydraglayout.view.RefreshView.MAX_RADIUS;
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_BECOME_SMALLER;
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_VISIBLE;
+import static com.lxtx.draglayout.view.RefreshView.COMMON_RADIUS;
+import static com.lxtx.draglayout.view.RefreshView.MAX_RADIUS;
+import static com.lxtx.draglayout.view.RefreshView.THRESHOLD_POINT_BECOME_SMALLER;
+import static com.lxtx.draglayout.view.RefreshView.THRESHOLD_POINT_VISIBLE;
 
 /**
  * @author codejoyfun

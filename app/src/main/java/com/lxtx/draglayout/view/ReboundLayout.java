@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.view;
+package com.lxtx.draglayout.view;
 
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
@@ -7,8 +7,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Scroller;
 
-import com.lxtx.mydraglayout.OnReboundListener;
-import com.lxtx.mydraglayout.util.ScreenUtil;
+import com.lxtx.draglayout.OnReboundListener;
+import com.lxtx.draglayout.util.ScreenUtil;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;

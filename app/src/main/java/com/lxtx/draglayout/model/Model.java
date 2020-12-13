@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.model;
+package com.lxtx.draglayout.model;
 
 /**
  * @author codejoyfun

@@ -1,13 +1,13 @@
-package com.lxtx.mydraglayout.adapter;
+package com.lxtx.draglayout.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.lxtx.mydraglayout.R;
-import com.lxtx.mydraglayout.model.Model;
-import com.lxtx.mydraglayout.adapter.MyAdapter.MyHolder;
+import com.lxtx.draglayout.R;
+import com.lxtx.draglayout.model.Model;
+import com.lxtx.draglayout.adapter.MyAdapter.MyHolder;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,7 @@
-package com.lxtx.mydraglayout.progress;
+package com.lxtx.draglayout.progress;
 
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_BECOME_SMALLER;
-import static com.lxtx.mydraglayout.view.RefreshView.THRESHOLD_POINT_FADE;
+import static com.lxtx.draglayout.view.RefreshView.THRESHOLD_POINT_BECOME_SMALLER;
+import static com.lxtx.draglayout.view.RefreshView.THRESHOLD_POINT_FADE;
 
 /**
  * @author codejoyfun

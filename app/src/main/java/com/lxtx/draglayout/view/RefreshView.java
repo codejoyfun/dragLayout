@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.view;
+package com.lxtx.draglayout.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -8,13 +8,13 @@ import android.os.Build.VERSION_CODES;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.lxtx.mydraglayout.progress.AlphaStrategy;
-import com.lxtx.mydraglayout.progress.CenterPointStrategy;
-import com.lxtx.mydraglayout.progress.PointAlphaStrategy;
-import com.lxtx.mydraglayout.progress.PointProgressStrategy;
-import com.lxtx.mydraglayout.progress.RefreshViewAlphaStrategy;
-import com.lxtx.mydraglayout.progress.SmallPointStrategy;
-import com.lxtx.mydraglayout.util.ScreenUtil;
+import com.lxtx.draglayout.progress.AlphaStrategy;
+import com.lxtx.draglayout.progress.CenterPointStrategy;
+import com.lxtx.draglayout.progress.PointAlphaStrategy;
+import com.lxtx.draglayout.progress.PointProgressStrategy;
+import com.lxtx.draglayout.progress.RefreshViewAlphaStrategy;
+import com.lxtx.draglayout.progress.SmallPointStrategy;
+import com.lxtx.draglayout.util.ScreenUtil;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;

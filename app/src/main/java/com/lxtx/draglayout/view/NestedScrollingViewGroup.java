@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.view;
+package com.lxtx.draglayout.view;
 
 import android.content.Context;
 import android.os.Build.VERSION_CODES;

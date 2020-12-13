@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout;
+package com.lxtx.draglayout;
 
 /**
  * @author 宁锟

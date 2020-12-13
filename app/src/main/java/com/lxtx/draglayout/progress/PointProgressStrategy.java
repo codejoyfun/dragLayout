@@ -1,4 +1,4 @@
-package com.lxtx.mydraglayout.progress;
+package com.lxtx.draglayout.progress;
 
 /**
  * @author codejoyfun

@@ -1,6 +1,6 @@
-package com.lxtx.mydraglayout.util;
+package com.lxtx.draglayout.util;
 
-import com.lxtx.mydraglayout.MyApp;
+import com.lxtx.draglayout.MyApp;
 
 /**
  * @author codejoyfun
